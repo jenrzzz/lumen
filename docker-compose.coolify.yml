@@ -1,0 +1,38 @@
+# Coolify deploy compose — Authelia-gated (parboil pattern).
+# The Coolify domain field must stay EMPTY on this app: routing lives entirely
+# in these labels so there is no ungated route by construction.
+services:
+  lumen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - '/srv/lumen/stories:/app/stories'
+    networks:
+      - coolify
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:4173/api/stories']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.gzip.compress=true
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.routers.http-0-lumen.entryPoints=http
+      - traefik.http.routers.http-0-lumen.middlewares=redirect-to-https
+      - 'traefik.http.routers.http-0-lumen.rule=Host(`lumen.amber.place`) || Host(`fable.amber.place`) || Host(`stories.amber.place`)'
+      - traefik.http.routers.https-0-lumen.entryPoints=https
+      - 'traefik.http.routers.https-0-lumen.middlewares=authelia@file,gzip'
+      - 'traefik.http.routers.https-0-lumen.rule=Host(`lumen.amber.place`) || Host(`fable.amber.place`) || Host(`stories.amber.place`)'
+      - traefik.http.routers.https-0-lumen.tls=true
+      - traefik.http.routers.https-0-lumen.tls.certresolver=letsencrypt
+      - traefik.http.routers.https-0-lumen.service=svc-lumen
+      - traefik.http.services.svc-lumen.loadbalancer.server.port=4173
+networks:
+  coolify:
+    external: true

@@ -1,0 +1,12 @@
+{
+  "name": "lumen",
+  "version": "1.0.0",
+  "description": "Bedtime story library for Solan — fiction by Fable, nonfiction by Lumen",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0"
+  }
+}
